@@ -10,10 +10,18 @@ if (Meteor.isClient) {
     }
   });
 
-  Template.hello.events({
-    'click button': function () {
-      // increment the counter when button is clicked
-      Session.set('counter', Session.get('counter') + 1);
+  Template.body.events({
+    "submit .new-task": function (event) {
+      event.preventDefault();
+
+      var text = event.target.text.value;
+
+      Tasks.insert({
+        text : text,
+        createdAt : new Date()
+      });
+
+      event.target.text.value = "";
     }
   });
 }
