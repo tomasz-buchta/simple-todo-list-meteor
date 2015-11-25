@@ -1,8 +1,7 @@
 Tasks = new Mongo.Collection("tasks");
 
 if (Meteor.isClient) {
-  // counter starts at 0
-  // Session.setDefault('counter', 0);
+  Meteor.subscribe("tasks");
 
   Template.body.helpers({
     tasks: function () {
@@ -41,10 +40,25 @@ if (Meteor.isClient) {
     },
     "click .delete": function () {
       Meteor.call("deleteTask", this._id);
+    },
+    "click .toggle-private": function() {
+      Meteor.call("setPrivate", this._id, ! this.private, function(error, result){
+        if(error){
+          console.log("error", error);
+        }
+        if(result){
+
+        }
+      });
     }
   });
   Accounts.ui.config({
     passwordSignupFields: "USERNAME_ONLY"
+  });
+  Template.task.helpers({
+    isOwner: function(){
+      return this.owner === Meteor.userId();
+    }
   });
 
 }
@@ -52,6 +66,9 @@ if (Meteor.isClient) {
 if (Meteor.isServer) {
   Meteor.startup(function () {
     // code to run on server at startup
+  });
+  Meteor.publish("tasks", function(){
+    return Tasks.find();
   });
 }
 
@@ -79,5 +96,16 @@ Meteor.methods({
       throw new Meteor.Error(403,"not-authorized");
     }
     Tasks.update(taskId, { $set: { checked: setChecked} });
+  },
+  setPrivate: function(taskId,setToPrivate){
+    var task = Tasks.findOne({_id: taskId});
+
+    if (task.owner !== Meteor.userId()){
+      throw new Meteor.Error(403, "not-authorized");
+    }
+    Tasks.update({_id: taskId}, {$set:{
+      private: setToPrivate
+    }});
+
   }
 });
