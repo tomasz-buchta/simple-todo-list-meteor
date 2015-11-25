@@ -68,7 +68,12 @@ if (Meteor.isServer) {
     // code to run on server at startup
   });
   Meteor.publish("tasks", function(){
-    return Tasks.find();
+    return Tasks.find({
+      $or: [
+        {private: {$ne: true}},
+        {owner: this.userId}
+      ]
+    });
   });
 }
 
@@ -86,13 +91,15 @@ Meteor.methods({
     });
   },
   deleteTask: function (taskId) {
-    if(! Meteor.userId()) {
+    var task = Tasks.findOne({_id:taskId});
+    if(task.private && task.owner !== Meteor.userId()) {
       throw new Meteor.Error(403,"not-authorized");
     }
     Tasks.remove(taskId);
   },
   setChecked: function (taskId, setChecked) {
-    if(! Meteor.userId()) {
+    var task = Tasks.findOne({_id:taskId});
+    if(task.private && task.owner !== Meteor.userId()) {
       throw new Meteor.Error(403,"not-authorized");
     }
     Tasks.update(taskId, { $set: { checked: setChecked} });
